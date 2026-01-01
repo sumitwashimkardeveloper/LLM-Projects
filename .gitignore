@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Env / secrets
+.env
+
+# Models (large binaries, don't commit)
+*.gguf
+*.bin
+*.safetensors
+
+# Editor/OS
+.vscode/
+.DS_Store
