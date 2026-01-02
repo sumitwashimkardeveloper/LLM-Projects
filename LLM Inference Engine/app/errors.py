@@ -27,3 +27,8 @@ class ContextLengthExceededError(InferenceEngineError):
 class InvalidRequestError(InferenceEngineError):
     status_code = 400
     error_type = "invalid_request_error"
+
+
+class ModelNotFoundError(InferenceEngineError):
+    status_code = 404
+    error_type = "model_not_found"

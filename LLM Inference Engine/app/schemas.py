@@ -32,6 +32,14 @@ class Usage(BaseModel):
     total_tokens: int
 
 
+class Timing(BaseModel):
+    """Non-standard extension (not part of the OpenAI schema) surfacing
+    the token-level performance stats called for in Phase 2."""
+
+    time_to_first_token_ms: float
+    tokens_per_sec: float
+
+
 class ChatCompletionResponse(BaseModel):
     id: str = Field(default_factory=lambda: f"chatcmpl-{uuid.uuid4().hex}")
     object: Literal["chat.completion"] = "chat.completion"
@@ -39,6 +47,7 @@ class ChatCompletionResponse(BaseModel):
     model: str
     choices: List[ChatCompletionChoice]
     usage: Usage
+    timing: Optional[Timing] = None
 
 
 class CompletionRequest(BaseModel):
@@ -64,6 +73,7 @@ class CompletionResponse(BaseModel):
     model: str
     choices: List[CompletionChoice]
     usage: Usage
+    timing: Optional[Timing] = None
 
 
 class ModelObject(BaseModel):
@@ -71,6 +81,7 @@ class ModelObject(BaseModel):
     object: Literal["model"] = "model"
     created: int = Field(default_factory=lambda: int(time.time()))
     owned_by: str = "local"
+    loaded: bool = False
 
 
 class ModelList(BaseModel):

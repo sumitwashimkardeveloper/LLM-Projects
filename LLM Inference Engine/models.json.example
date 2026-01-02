@@ -1,0 +1,15 @@
+{
+  "models": [
+    {
+      "name": "llama-3-8b-instruct",
+      "path": "models/llama-3-8b-instruct.Q4_K_M.gguf",
+      "family": "llama3"
+    },
+    {
+      "name": "qwen2.5-7b-instruct",
+      "path": "models/qwen2.5-7b-instruct.Q4_K_M.gguf",
+      "family": "qwen",
+      "n_ctx": 8192
+    }
+  ]
+}

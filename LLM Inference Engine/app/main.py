@@ -4,19 +4,19 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from .config import settings
-from .engine import LlamaCppEngine
 from .errors import InferenceEngineError
-from .routers import chat, completions
+from .registry import ModelRegistry
+from .routers import chat, completions, models
 from .schemas import ErrorDetail, ErrorResponse
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.engine = LlamaCppEngine(settings)
+    app.state.registry = ModelRegistry(settings)
     yield
 
 
-app = FastAPI(title="LLM Inference Engine", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="LLM Inference Engine", version="0.2.0", lifespan=lifespan)
 
 
 @app.exception_handler(InferenceEngineError)
@@ -36,8 +36,9 @@ async def handle_inference_error(request: Request, exc: InferenceEngineError) ->
 
 @app.get("/health")
 async def health() -> dict:
-    return {"status": "ok", "model": settings.model_name}
+    return {"status": "ok"}
 
 
 app.include_router(chat.router)
 app.include_router(completions.router)
+app.include_router(models.router)

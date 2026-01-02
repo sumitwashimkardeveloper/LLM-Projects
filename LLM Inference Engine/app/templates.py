@@ -12,6 +12,7 @@ from typing import List, Literal
 from .schemas import ChatMessage
 
 ModelFamily = Literal["llama3", "mistral", "qwen", "gemma", "generic"]
+ALLOWED_FAMILIES = frozenset(("llama3", "mistral", "qwen", "gemma", "generic"))
 
 
 @dataclass
