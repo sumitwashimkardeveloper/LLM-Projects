@@ -1,9 +1,9 @@
 # LLM Inference Engine
 
 Self-hosted, OpenAI-API-compatible inference server. See [plan.md](plan.md)
-for the full four-phase build plan. This is **Phase 2**: streaming, a
-multi-model registry with lazy loading + LRU eviction, and token/timing
-stats on every response.
+for the full four-phase build plan. This is **Phase 3**: concurrent request
+handling per model via a slot-based scheduler, with backpressure and
+stream-cancellation.
 
 ## Setup
 
@@ -77,24 +77,29 @@ for chunk in stream:
         print(chunk.choices[0].delta.content, end="", flush=True)
 ```
 
-## What's implemented (Phase 2)
+## What's implemented (Phase 3)
 
 - `stream=true` on both `/v1/chat/completions` and `/v1/completions` —
-  Server-Sent Events with incremental deltas and a trailing `data: [DONE]`,
-  matching OpenAI's chunk format
-- Multi-model registry (`models.json`): models load lazily on first
-  request; once more than `MAX_LOADED_MODELS` are resident, the
-  least-recently-used one is evicted
-- `GET /v1/models` — lists configured models and whether each is
-  currently loaded
-- `usage` (prompt/completion/total tokens) on every response, streamed or
-  not — on streams it arrives as a final chunk before `[DONE]`
-- `timing` field (`time_to_first_token_ms`, `tokens_per_sec`) on every
-  response — a non-standard extension, not part of the OpenAI schema
-- Structured request logging (request id, model, endpoint, token counts,
-  latency, tokens/sec) to stdout
+  Server-Sent Events with incremental deltas and a trailing `data: [DONE]`
+- Multi-model registry (`models.json`) with lazy loading + LRU eviction
+- `GET /v1/models`, `usage`, and `timing` on every response (Phase 2)
+- Per-model slot pool (`BatchScheduler` in `app/scheduler.py`): each model
+  gets `n_parallel` independent llama.cpp contexts ("slots"), each with its
+  own KV cache. A background thread admits queued requests into free slots
+  and steps every busy slot's generation one token at a time in round-robin
+  order, so multiple requests to the *same* model make progress
+  concurrently instead of queuing fully serially
+- Backpressure: `MAX_QUEUE_DEPTH` caps how many requests can wait for a
+  free slot (further requests get `429 overloaded`); `REQUEST_TIMEOUT_S`
+  fails a request that's been queued too long (`408 timeout`)
+- Cancellation: if a streaming client disconnects, the slot is freed and
+  generation stops instead of burning compute for an abandoned request
 
-Everything still runs one generation at a time per model (two different
-models can generate concurrently since each has its own engine, but two
-requests to the *same* model queue up). Real intra-model concurrency
-(continuous batching, per-request KV cache slots) is Phase 3.
+`n_parallel` is configurable per model in `models.json` (falls back to
+`N_PARALLEL` in `.env`). Each slot loads an independent copy of the model
+weights, so raising it trades memory for concurrency — a 4GB Q4 model with
+`n_parallel: 4` uses roughly 16GB. This is a scheduling-level form of
+concurrency (independent contexts sharing time on the same thread); true
+fused-batch decoding across sequences in a single forward pass (what
+vLLM/llama.cpp's own server do at the CUDA-kernel level) would need the
+low-level `llama_batch`/`llama_decode` API and is out of scope here.

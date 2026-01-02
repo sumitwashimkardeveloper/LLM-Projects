@@ -32,3 +32,13 @@ class InvalidRequestError(InferenceEngineError):
 class ModelNotFoundError(InferenceEngineError):
     status_code = 404
     error_type = "model_not_found"
+
+
+class QueueFullError(InferenceEngineError):
+    status_code = 429
+    error_type = "overloaded"
+
+
+class RequestTimeoutError(InferenceEngineError):
+    status_code = 408
+    error_type = "timeout"

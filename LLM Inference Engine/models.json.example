@@ -9,7 +9,8 @@
       "name": "qwen2.5-7b-instruct",
       "path": "models/qwen2.5-7b-instruct.Q4_K_M.gguf",
       "family": "qwen",
-      "n_ctx": 8192
+      "n_ctx": 8192,
+      "n_parallel": 4
     }
   ]
 }

@@ -14,9 +14,10 @@ from .schemas import ErrorDetail, ErrorResponse
 async def lifespan(app: FastAPI):
     app.state.registry = ModelRegistry(settings)
     yield
+    app.state.registry.shutdown_all()
 
 
-app = FastAPI(title="LLM Inference Engine", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="LLM Inference Engine", version="0.3.0", lifespan=lifespan)
 
 
 @app.exception_handler(InferenceEngineError)

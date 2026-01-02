@@ -1,8 +1,3 @@
-"""Multi-model registry: declares which GGUF models are available, loads
-them lazily on first use, and evicts the least-recently-used model once
-more than `max_loaded_models` are resident so memory stays bounded.
-"""
-
 import json
 import threading
 from collections import OrderedDict
@@ -11,8 +6,8 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from .config import Settings
-from .engine import LlamaCppEngine
 from .errors import ModelNotFoundError
+from .scheduler import BatchScheduler
 from .templates import ALLOWED_FAMILIES, detect_family
 
 ALLOWED_SPEC_FAMILIES = ALLOWED_FAMILIES | {"auto"}
@@ -26,6 +21,7 @@ class ModelSpec:
     n_ctx: Optional[int] = None
     n_gpu_layers: Optional[int] = None
     n_threads: Optional[int] = None
+    n_parallel: Optional[int] = None
 
 
 def _load_model_specs(settings: Settings) -> List[ModelSpec]:
@@ -55,31 +51,31 @@ class ModelRegistry:
     def __init__(self, settings: Settings):
         self.settings = settings
         self.specs: Dict[str, ModelSpec] = {s.name: s for s in _load_model_specs(settings)}
-        self._engines: "OrderedDict[str, LlamaCppEngine]" = OrderedDict()
+        self._schedulers: "OrderedDict[str, BatchScheduler]" = OrderedDict()
         self._lock = threading.Lock()
 
     def list_specs(self) -> List[ModelSpec]:
         return list(self.specs.values())
 
     def is_loaded(self, name: str) -> bool:
-        return name in self._engines
+        return name in self._schedulers
 
     def get_family(self, name: str) -> str:
         spec = self.specs[name]
         return detect_family(name) if spec.family == "auto" else spec.family
 
-    def get_engine(self, name: str) -> LlamaCppEngine:
+    def get_scheduler(self, name: str) -> BatchScheduler:
         spec = self.specs.get(name)
         if spec is None:
             raise ModelNotFoundError(f"Model '{name}' is not configured.", param="model")
 
         with self._lock:
-            engine = self._engines.get(name)
-            if engine is not None:
-                self._engines.move_to_end(name)
-                return engine
+            scheduler = self._schedulers.get(name)
+            if scheduler is not None:
+                self._schedulers.move_to_end(name)
+                return scheduler
 
-            engine = LlamaCppEngine(
+            scheduler = BatchScheduler(
                 model_path=spec.path,
                 n_ctx=spec.n_ctx or self.settings.n_ctx,
                 n_gpu_layers=(
@@ -87,10 +83,20 @@ class ModelRegistry:
                 ),
                 n_threads=spec.n_threads if spec.n_threads is not None else self.settings.n_threads,
                 verbose=self.settings.verbose,
+                n_parallel=spec.n_parallel or self.settings.n_parallel,
+                max_queue=self.settings.max_queue_depth,
+                request_timeout=self.settings.request_timeout_s,
             )
-            self._engines[name] = engine
+            self._schedulers[name] = scheduler
 
-            while len(self._engines) > self.settings.max_loaded_models:
-                self._engines.popitem(last=False)
+            while len(self._schedulers) > self.settings.max_loaded_models:
+                _, evicted = self._schedulers.popitem(last=False)
+                evicted.shutdown()
 
-            return engine
+            return scheduler
+
+    def shutdown_all(self) -> None:
+        with self._lock:
+            for scheduler in self._schedulers.values():
+                scheduler.shutdown()
+            self._schedulers.clear()

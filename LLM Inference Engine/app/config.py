@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     # used to build a one-model registry instead.
     models_manifest: str = "models.json"
     max_loaded_models: int = 1
+    n_parallel: int = 2
+    max_queue_depth: int = 64
+    request_timeout_s: float = 120.0
 
     # Legacy / single-model fallback
     model_path: Optional[str] = None
