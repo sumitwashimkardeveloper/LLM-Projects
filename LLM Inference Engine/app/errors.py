@@ -42,3 +42,13 @@ class QueueFullError(InferenceEngineError):
 class RequestTimeoutError(InferenceEngineError):
     status_code = 408
     error_type = "timeout"
+
+
+class AuthenticationError(InferenceEngineError):
+    status_code = 401
+    error_type = "authentication_error"
+
+
+class RateLimitedError(InferenceEngineError):
+    status_code = 429
+    error_type = "rate_limit_exceeded"

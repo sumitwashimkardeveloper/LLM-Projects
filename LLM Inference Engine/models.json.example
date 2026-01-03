@@ -3,14 +3,23 @@
     {
       "name": "llama-3-8b-instruct",
       "path": "models/llama-3-8b-instruct.Q4_K_M.gguf",
-      "family": "llama3"
+      "family": "llama3",
+      "backend": "gguf"
     },
     {
       "name": "qwen2.5-7b-instruct",
       "path": "models/qwen2.5-7b-instruct.Q4_K_M.gguf",
       "family": "qwen",
+      "backend": "gguf",
       "n_ctx": 8192,
       "n_parallel": 4
+    },
+    {
+      "name": "mistral-7b-awq",
+      "path": "models/Mistral-7B-Instruct-v0.2-AWQ",
+      "family": "mistral",
+      "backend": "awq",
+      "device": "cuda:0"
     }
   ]
 }

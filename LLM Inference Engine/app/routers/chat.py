@@ -6,8 +6,11 @@ from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from starlette.concurrency import run_in_threadpool
 
+from ..auth import check_api_key
 from ..errors import ContextLengthExceededError, RequestTimeoutError
 from ..logging_utils import log_request
+from ..metrics import metrics
+from ..rate_limit import check_rate_limit
 from ..registry import ModelRegistry
 from ..scheduler import BatchScheduler, GenerationJob
 from ..schemas import (
@@ -44,6 +47,10 @@ def _drain(job: GenerationJob):
 
 @router.post("/v1/chat/completions", response_model=None)
 async def create_chat_completion(body: ChatCompletionRequest, request: Request):
+    check_api_key(request)
+    check_rate_limit(request.client.host if request.client else "unknown")
+    metrics.record_request("/v1/chat/completions")
+
     registry: ModelRegistry = request.app.state.registry
     scheduler = registry.get_scheduler(body.model)
     family = registry.get_family(body.model)
@@ -91,6 +98,8 @@ async def create_chat_completion(body: ChatCompletionRequest, request: Request):
             latency_ms=elapsed * 1000,
             tokens_per_sec=tokens_per_sec,
         )
+        metrics.record_latency("/v1/chat/completions", elapsed * 1000)
+        metrics.record_tokens("/v1/chat/completions", completion_tokens, tokens_per_sec)
 
         return ChatCompletionResponse(
             id=request_id,
@@ -230,5 +239,7 @@ def _sse_chat_stream(
         latency_ms=elapsed * 1000,
         tokens_per_sec=tokens_per_sec,
     )
+    metrics.record_latency("/v1/chat/completions", elapsed * 1000)
+    metrics.record_tokens("/v1/chat/completions", completion_tokens, tokens_per_sec)
 
     yield SSE_DONE

@@ -3,7 +3,7 @@ import threading
 from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Callable, Dict, Iterator, List, Optional
 
 from .config import Settings
 from .errors import ModelNotFoundError
@@ -18,10 +18,12 @@ class ModelSpec:
     name: str
     path: str
     family: str = "auto"
+    backend: str = "gguf"
     n_ctx: Optional[int] = None
     n_gpu_layers: Optional[int] = None
     n_threads: Optional[int] = None
     n_parallel: Optional[int] = None
+    device: Optional[str] = None
 
 
 def _load_model_specs(settings: Settings) -> List[ModelSpec]:
@@ -31,7 +33,9 @@ def _load_model_specs(settings: Settings) -> List[ModelSpec]:
         specs = [ModelSpec(**entry) for entry in data["models"]]
     elif settings.model_path:
         specs = [
-            ModelSpec(name=settings.model_name, path=settings.model_path, family=settings.model_family)
+            ModelSpec(
+                name=settings.model_name, path=settings.model_path, family=settings.model_family
+            )
         ]
     else:
         raise RuntimeError(
@@ -43,6 +47,11 @@ def _load_model_specs(settings: Settings) -> List[ModelSpec]:
             raise RuntimeError(
                 f"Model '{spec.name}' has unknown family '{spec.family}'; "
                 f"expected one of {sorted(ALLOWED_SPEC_FAMILIES)}."
+            )
+        if spec.backend not in ("gguf", "awq"):
+            raise RuntimeError(
+                f"Model '{spec.name}' has unknown backend '{spec.backend}'; "
+                f"expected 'gguf' or 'awq'."
             )
     return specs
 
@@ -64,6 +73,11 @@ class ModelRegistry:
         spec = self.specs[name]
         return detect_family(name) if spec.family == "auto" else spec.family
 
+    def iter_schedulers(self) -> Iterator[BatchScheduler]:
+        with self._lock:
+            for scheduler in self._schedulers.values():
+                yield scheduler
+
     def get_scheduler(self, name: str) -> BatchScheduler:
         spec = self.specs.get(name)
         if spec is None:
@@ -75,14 +89,9 @@ class ModelRegistry:
                 self._schedulers.move_to_end(name)
                 return scheduler
 
+            factory = self._make_engine_factory(spec)
             scheduler = BatchScheduler(
-                model_path=spec.path,
-                n_ctx=spec.n_ctx or self.settings.n_ctx,
-                n_gpu_layers=(
-                    spec.n_gpu_layers if spec.n_gpu_layers is not None else self.settings.n_gpu_layers
-                ),
-                n_threads=spec.n_threads if spec.n_threads is not None else self.settings.n_threads,
-                verbose=self.settings.verbose,
+                engine_factory=factory,
                 n_parallel=spec.n_parallel or self.settings.n_parallel,
                 max_queue=self.settings.max_queue_depth,
                 request_timeout=self.settings.request_timeout_s,
@@ -94,6 +103,33 @@ class ModelRegistry:
                 evicted.shutdown()
 
             return scheduler
+
+    def _make_engine_factory(self, spec: ModelSpec) -> Callable:
+        if spec.backend == "gguf":
+            from .engine import LlamaCppEngine
+
+            return lambda: LlamaCppEngine(
+                model_path=spec.path,
+                n_ctx=spec.n_ctx or self.settings.n_ctx,
+                n_gpu_layers=(
+                    spec.n_gpu_layers
+                    if spec.n_gpu_layers is not None
+                    else self.settings.n_gpu_layers
+                ),
+                n_threads=(
+                    spec.n_threads if spec.n_threads is not None else self.settings.n_threads
+                ),
+                verbose=self.settings.verbose,
+            )
+        else:
+            from .awq_engine import AWQEngine
+
+            return lambda: AWQEngine(
+                model_path=spec.path,
+                n_ctx=spec.n_ctx or self.settings.n_ctx,
+                device=spec.device or self.settings.awq_device,
+                dtype=self.settings.awq_dtype,
+            )
 
     def shutdown_all(self) -> None:
         with self._lock:

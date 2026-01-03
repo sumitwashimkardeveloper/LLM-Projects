@@ -3,9 +3,8 @@ import threading
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Callable, List, Optional
 
-from .engine import LlamaCppEngine
 from .errors import ContextLengthExceededError, QueueFullError
 
 
@@ -23,7 +22,7 @@ class GenerationJob:
 
 
 class Slot:
-    def __init__(self, index: int, engine: LlamaCppEngine):
+    def __init__(self, index: int, engine):
         self.index = index
         self.engine = engine
         self.job: Optional[GenerationJob] = None
@@ -40,11 +39,7 @@ class BatchScheduler:
     def __init__(
         self,
         *,
-        model_path: str,
-        n_ctx: int = 4096,
-        n_gpu_layers: int = 0,
-        n_threads: Optional[int] = None,
-        verbose: bool = False,
+        engine_factory: Callable,
         n_parallel: int = 2,
         max_queue: int = 64,
         request_timeout: float = 120.0,
@@ -53,17 +48,7 @@ class BatchScheduler:
         self.request_timeout = request_timeout
         self._pending: "queue.Queue[GenerationJob]" = queue.Queue()
         self._slots = [
-            Slot(
-                index=i,
-                engine=LlamaCppEngine(
-                    model_path=model_path,
-                    n_ctx=n_ctx,
-                    n_gpu_layers=n_gpu_layers,
-                    n_threads=n_threads,
-                    verbose=verbose,
-                ),
-            )
-            for i in range(n_parallel)
+            Slot(index=i, engine=engine_factory()) for i in range(n_parallel)
         ]
         self._wake = threading.Event()
         self._stop = threading.Event()

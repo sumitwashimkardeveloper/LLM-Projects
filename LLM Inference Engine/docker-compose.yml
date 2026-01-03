@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  inference-cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: llm-inference-cpu
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models:ro
+      - ./models.json:/app/models.json:ro
+      - ./.env:/app/.env:ro
+    environment:
+      - N_PARALLEL=2
+      - MAX_QUEUE_DEPTH=64
+      - REQUEST_TIMEOUT_S=120
+      - MODEL_PATH=/app/models/default.gguf
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  inference-gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile.gpu
+    container_name: llm-inference-gpu
+    runtime: nvidia
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./models:/app/models:ro
+      - ./models.json:/app/models.json:ro
+      - ./.env:/app/.env:ro
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - N_PARALLEL=4
+      - MAX_QUEUE_DEPTH=128
+      - AWQ_DEVICE=cuda:0
+      - MODEL_PATH=/app/models/default.gguf
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

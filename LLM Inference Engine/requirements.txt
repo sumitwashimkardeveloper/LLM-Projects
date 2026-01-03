@@ -4,3 +4,4 @@ llama-cpp-python>=0.2.90
 pydantic>=2.7
 pydantic-settings>=2.3
 python-dotenv>=1.0
+numpy>=1.24
