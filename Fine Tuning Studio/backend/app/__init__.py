@@ -7,7 +7,7 @@ from app.config import config
 from app.models import db
 from app.logger import setup_logger
 from app.middleware import register_error_handlers
-from app.routes import auth_bp, models_bp, health_bp, datasets_bp, training_bp
+from app.routes import auth_bp, models_bp, health_bp, datasets_bp, training_bp, dashboard_bp, inference_bp, alerts_bp
 
 def create_app(config_name=None):
     if config_name is None:
@@ -30,6 +30,9 @@ def create_app(config_name=None):
     app.register_blueprint(models_bp)
     app.register_blueprint(datasets_bp)
     app.register_blueprint(training_bp)
+    app.register_blueprint(dashboard_bp)
+    app.register_blueprint(inference_bp)
+    app.register_blueprint(alerts_bp)
 
     with app.app_context():
         db.create_all()
