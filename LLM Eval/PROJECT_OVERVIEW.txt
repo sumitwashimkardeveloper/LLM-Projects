@@ -1,0 +1,368 @@
+================================================================================
+                LLM EVALUATION FRAMEWORK - PROJECT OVERVIEW
+================================================================================
+
+PROJECT DESCRIPTION
+================================================================================
+A comprehensive framework for evaluating and comparing Large Language Models
+(LLMs) across multiple dimensions including accuracy, cost, latency, and quality.
+
+SUPPORTED LLM PROVIDERS
+================================================================================
+✓ Claude (Anthropic)           - claude-3-opus, claude-3-sonnet, claude-3-haiku
+✓ GPT (OpenAI)                 - gpt-4, gpt-4-turbo, gpt-3.5-turbo
+✓ Gemini (Google)              - gemini-pro, gemini-pro-vision
+✓ Llama (Local/Open-source)    - llama-2-7b, llama-2-13b, llama-2-70b
+
+EVALUATION METRICS
+================================================================================
+
+Accuracy Metrics:
+  • BLEU (Bilingual Evaluation Understudy)
+    - N-gram overlap measurement
+    - Range: 0 to 1 (higher is better)
+
+  • ROUGE (Recall-Oriented Understudy for Gisting Evaluation)
+    - Recall of n-grams, LCS, skip-bigrams
+    - Range: 0 to 1 (higher is better)
+
+  • BERTScore (Learned Evaluation Metric)
+    - Contextual semantic similarity using BERT embeddings
+    - Range: 0 to 1 (higher is better)
+
+Quality Metrics:
+  • Hallucination Detection
+    - Identifies factually incorrect information
+    - Range: 0 to 1 (higher = fewer hallucinations)
+
+  • Faithfulness
+    - Measures adherence to source/context
+    - Range: 0 to 1 (higher is better)
+
+  • Toxicity Detection
+    - Detects harmful or offensive language
+    - Range: 0 to 1 (higher = less toxic)
+
+Performance Metrics:
+  • Latency
+    - End-to-end response time
+    - Includes API calls, network, inference
+
+  • Cost
+    - Per-token pricing based on provider rates
+    - Tracks input and output tokens
+
+ARENA COMPARISON
+================================================================================
+
+Tournament Mode:
+  - Multiple models evaluated on same prompts
+  - Win rate calculation per model
+  - Automatic ranking and leaderboard generation
+
+Head-to-Head:
+  - Direct comparison between two models
+  - Latency and cost comparison
+  - Quality score comparison
+
+BENCHMARKING SUITE
+================================================================================
+
+Latency Benchmark:
+  - Measures response time
+  - Single and batch iterations
+  - Average latency calculation
+
+Cost Benchmark:
+  - Tracks total cost per prompt
+  - Cost-per-token analysis
+  - Budget tracking
+
+Quality Benchmark:
+  - Comprehensive metric evaluation
+  - Quality score averaging
+  - Performance tracking
+
+Throughput Benchmark:
+  - Requests per second measurement
+  - Time-based evaluation
+  - Capacity analysis
+
+CORE MODULES
+================================================================================
+
+config.py (Configuration)
+  - ModelConfig: Provider, model name, API keys
+  - EvalConfig: Batch size, workers, timeout settings
+  - ModelProvider: Enum for supported providers
+  - MetricType: Enum for available metrics
+  - Pricing data: OPENAI_PRICING, CLAUDE_PRICING, etc.
+
+metrics.py (Evaluation Engine)
+  - BLEUMetric: N-gram overlap scoring
+  - ROUGEMetric: Recall-based scoring
+  - BERTScoreMetric: Semantic similarity
+  - HallucinationDetector: Factual accuracy
+  - FaithfulnessDetector: Source adherence
+  - ToxicityDetector: Harmful content detection
+  - MetricsEngine: Orchestrates all metrics
+
+models.py (Provider Integration)
+  - BaseModel: Abstract base class
+  - OpenAIModel: GPT integration
+  - ClaudeModel: Claude integration
+  - GeminiModel: Gemini integration
+  - LlamaModel: Llama integration
+  - ModelFactory: Creates model instances
+
+evaluator.py (Core Evaluation)
+  - Evaluator: Main evaluation engine
+  - Supports single, batch, multi-model evaluation
+  - Results caching and export (JSON, CSV)
+  - Summary statistics generation
+
+arena.py (Comparison System)
+  - Arena: Tournament and comparison management
+  - run_tournament(): Multi-model tournament
+  - get_head_to_head(): Pairwise comparison
+  - Leaderboard generation
+  - Export functionality
+
+benchmark.py (Performance Analysis)
+  - Benchmark: Benchmark suite management
+  - run_latency_benchmark(): Latency testing
+  - run_cost_benchmark(): Cost analysis
+  - run_quality_benchmark(): Quality evaluation
+  - run_throughput_benchmark(): Capacity testing
+
+utils.py (Utilities)
+  - DataProcessor: JSON/CSV file handling
+  - StatisticsCalculator: Mean, median, stdev, percentiles
+  - ReportGenerator: Text and HTML report generation
+  - ComparisonAnalyzer: Statistical analysis
+  - PromptTemplateEngine: Template generation
+  - ResultsCache: Caching system
+
+USAGE PATTERNS
+================================================================================
+
+Basic Evaluation:
+  1. Create Evaluator instance
+  2. Register models via ModelConfig
+  3. Evaluate prompts with references
+  4. Export results
+
+Arena Tournament:
+  1. Register multiple models
+  2. Create Arena instance
+  3. Run tournament with prompts
+  4. View rankings and export
+
+Benchmarking:
+  1. Create Benchmark instance
+  2. Run specific benchmark type
+  3. Compare results between models
+  4. Export comprehensive report
+
+DATA FLOW
+================================================================================
+
+Input:
+  Prompts → References → Context → Model Selection
+
+Processing:
+  1. Model Generation: Call LLM API
+  2. Response Collection: Gather output
+  3. Metric Calculation: Compute all metrics
+  4. Statistics: Aggregate results
+  5. Export: Save to JSON/CSV
+
+Output:
+  Results Files → Leaderboards → Reports → Analysis
+
+FILE STRUCTURE
+================================================================================
+
+c:\Users\SRW\Desktop\New git\LLM\LLM Eval\
+├── config.py                 # Configuration and constants
+├── metrics.py               # Evaluation metrics implementation
+├── models.py                # LLM provider integrations
+├── evaluator.py             # Core evaluation engine
+├── arena.py                 # Model comparison system
+├── benchmark.py             # Benchmarking suite
+├── utils.py                 # Utility functions
+├── main.py                  # CLI interface
+├── quick_start.py           # Quick start example
+├── examples.py              # Usage examples
+├── test_framework.py        # Unit tests
+├── requirements.txt         # Python dependencies
+├── .env.example             # Environment variables template
+├── USAGE.txt                # Usage guide
+└── PROJECT_OVERVIEW.txt     # This file
+
+QUICK START
+================================================================================
+
+1. Install dependencies:
+   pip install -r requirements.txt
+
+2. Setup API keys:
+   cp .env.example .env
+   # Edit .env with your API keys
+
+3. Run quick start:
+   python quick_start.py
+
+4. Run examples:
+   python examples.py
+
+5. Run tests:
+   python test_framework.py
+
+6. Interactive CLI:
+   python main.py
+
+KEY FEATURES
+================================================================================
+
+✓ Multi-model support (OpenAI, Claude, Gemini, Llama)
+✓ 8+ evaluation metrics
+✓ Cost tracking and analysis
+✓ Latency measurement
+✓ Arena tournament system
+✓ Head-to-head comparison
+✓ Comprehensive benchmarking
+✓ Batch processing
+✓ Result export (JSON, CSV, HTML)
+✓ Statistical analysis
+✓ Leaderboard generation
+✓ Hallucination detection
+✓ Toxicity detection
+✓ Performance benchmarking
+
+EXTENSION POINTS
+================================================================================
+
+Custom Metrics:
+  - Extend MetricResult class
+  - Add to MetricsEngine.compute_all()
+
+Custom Models:
+  - Extend BaseModel class
+  - Register with ModelFactory
+
+Custom Analysis:
+  - Extend ComparisonAnalyzer
+  - Add custom statistical functions
+
+Custom Reports:
+  - Extend ReportGenerator
+  - Add export formats
+
+PERFORMANCE CONSIDERATIONS
+================================================================================
+
+Batch Size: Process multiple prompts efficiently
+Workers: Parallel processing for concurrent requests
+Caching: Cache responses to avoid redundant API calls
+Timeout: API timeout configuration
+Rate Limiting: Respect provider rate limits
+
+API DEPENDENCIES
+================================================================================
+
+Required:
+  • anthropic (Claude)
+  • openai (GPT)
+  • google-generativeai (Gemini)
+
+Optional:
+  • llama-cpp-python (Local Llama)
+
+Data Processing:
+  • nltk (NLP toolkit)
+  • rouge-score (ROUGE metric)
+  • bert-score (BERTScore metric)
+  • numpy (Numerical computing)
+  • pandas (Data analysis)
+
+PRICING INTEGRATION
+================================================================================
+
+Configurable pricing per provider:
+  - OpenAI: Variable pricing per model
+  - Claude: Variable pricing per model
+  - Gemini: Free tier pricing
+  - Llama: Local pricing (free)
+
+Update pricing constants in config.py
+
+OUTPUT EXAMPLES
+================================================================================
+
+Evaluation Result:
+  {
+    "model": "Claude",
+    "response": "...",
+    "latency": 0.234,
+    "cost": 0.000234,
+    "metrics": {
+      "bleu": 0.8234,
+      "rouge": 0.7654,
+      "bertscore": 0.8923,
+      "hallucination": 0.95,
+      "faithfulness": 0.92,
+      "toxicity": 0.99
+    }
+  }
+
+Arena Result:
+  {
+    "Claude": 0.67,      # 67% win rate
+    "GPT-3.5": 0.33     # 33% win rate
+  }
+
+TESTING
+================================================================================
+
+Unit tests cover:
+  - All metrics
+  - Evaluator functionality
+  - Model configuration
+  - Utility functions
+  - Data processors
+  - Statistical calculations
+
+Run tests:
+  python test_framework.py
+
+NEXT STEPS
+================================================================================
+
+1. Configure API keys in .env
+2. Run quick_start.py to verify setup
+3. Review examples.py for different use cases
+4. Modify main.py for custom evaluations
+5. Export and analyze results
+6. Build custom metrics if needed
+
+SUPPORT & DOCUMENTATION
+================================================================================
+
+See USAGE.txt for:
+  - Detailed usage examples
+  - Metric explanations
+  - Troubleshooting guide
+  - Advanced features
+
+See examples.py for:
+  - Basic evaluation
+  - Multi-model comparison
+  - Batch evaluation
+  - Arena tournaments
+  - Head-to-head comparison
+  - Hallucination detection
+
+================================================================================
+                          END OF OVERVIEW
+================================================================================

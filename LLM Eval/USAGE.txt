@@ -1,0 +1,227 @@
+LLM EVALUATION FRAMEWORK - USAGE GUIDE
+====================================================================
+
+PROJECT STRUCTURE
+====================================================================
+
+Core Modules:
+- config.py           : Configuration management and pricing data
+- metrics.py          : Evaluation metrics (BLEU, ROUGE, BERTScore, etc.)
+- models.py           : LLM provider integrations (OpenAI, Claude, Gemini, Llama)
+- evaluator.py        : Main evaluation engine
+- arena.py            : Arena comparison system
+- benchmark.py        : Benchmark suite
+- utils.py            : Utility functions for data processing and analysis
+
+Scripts:
+- main.py             : Interactive CLI interface
+- quick_start.py      : Quick start guide
+- examples.py         : Usage examples
+- test_framework.py   : Unit tests
+
+SETUP
+====================================================================
+
+1. Install dependencies:
+   pip install -r requirements.txt
+
+2. Configure API keys:
+   - Copy .env.example to .env
+   - Fill in your API keys:
+     ANTHROPIC_API_KEY=your_key
+     OPENAI_API_KEY=your_key
+     GEMINI_API_KEY=your_key
+
+FEATURES
+====================================================================
+
+1. EVALUATION METRICS
+   - BLEU: Bilingual Evaluation Understudy score
+   - ROUGE: Recall-Oriented Understudy for Gisting Evaluation
+   - BERTScore: Learned evaluation metric based on BERT embeddings
+   - Hallucination Detection: Detects factually incorrect content
+   - Faithfulness: Measures adherence to reference/context
+   - Toxicity: Detects harmful or offensive language
+
+2. SUPPORTED MODELS
+   - Claude (Anthropic)
+   - GPT-3.5 Turbo (OpenAI)
+   - Gemini Pro (Google)
+   - Llama (Local)
+
+3. ARENA COMPARISON
+   - Head-to-head model comparison
+   - Tournament-style rankings
+   - Win rate calculations
+   - Cost and latency analysis
+
+4. BENCHMARKING
+   - Latency benchmarks
+   - Cost benchmarks
+   - Quality benchmarks
+   - Throughput benchmarks
+
+USAGE EXAMPLES
+====================================================================
+
+1. QUICK START
+   python quick_start.py
+
+2. SINGLE EVALUATION
+   from config import ModelConfig, ModelProvider
+   from evaluator import Evaluator
+
+   evaluator = Evaluator()
+   config = ModelConfig(
+       provider=ModelProvider.CLAUDE,
+       model_name="claude-3-haiku-20240307"
+   )
+   evaluator.register_model("Claude", config)
+
+   result = evaluator.evaluate_single(
+       "Claude",
+       prompt="What is AI?",
+       reference="AI is artificial intelligence"
+   )
+
+3. BATCH EVALUATION
+   prompts = ["What is ML?", "What is DL?"]
+   references = ["ML enables learning", "DL uses neural networks"]
+
+   results = evaluator.evaluate_batch("Claude", prompts, references)
+   evaluator.generate_report("eval_results")
+
+4. ARENA TOURNAMENT
+   from arena import Arena
+
+   arena = Arena(evaluator)
+   rankings = arena.run_tournament(prompts, references)
+   arena.export_arena_report("arena_results")
+
+5. BENCHMARKING
+   from benchmark import Benchmark
+
+   benchmark = Benchmark(evaluator)
+   result = benchmark.run_latency_benchmark("Claude", prompts)
+   benchmark.export_benchmark_report("benchmark_results")
+
+6. HEAD-TO-HEAD COMPARISON
+   result = arena.get_head_to_head(
+       "Claude", "GPT-3.5",
+       prompts, references
+   )
+
+OUTPUT
+====================================================================
+
+Evaluation results are saved to:
+- eval_results/results.json  : Detailed results
+- eval_results/results.csv   : CSV format results
+- eval_results/summary.json  : Summary statistics
+
+Arena results are saved to:
+- arena_results/rankings.json
+- arena_results/leaderboard.csv
+- arena_results/leaderboard.txt
+
+Benchmark results are saved to:
+- benchmark_results/benchmark_results.json
+- benchmark_results/benchmark_summary.txt
+
+METRICS EXPLAINED
+====================================================================
+
+BLEU (0-1):
+- Measures n-gram overlap between generated and reference text
+- Higher is better
+- Range: 0 (no overlap) to 1 (perfect match)
+
+ROUGE (0-1):
+- Measures recall of n-grams, longest common subsequence, skip-bigrams
+- Higher is better
+- Range: 0 to 1
+
+BERTScore (0-1):
+- Uses contextual embeddings for semantic similarity
+- Higher is better
+- Range: 0 to 1
+
+Hallucination (0-1):
+- Detects factually incorrect information
+- Higher is better (1 = no hallucinations)
+- Range: 0 to 1
+
+Faithfulness (0-1):
+- Measures how well output adheres to source/context
+- Higher is better
+- Range: 0 to 1
+
+Toxicity (0-1):
+- Detects harmful or offensive language
+- Higher is better (1 = no toxicity)
+- Range: 0 to 1
+
+COST TRACKING
+====================================================================
+
+Pricing configured for:
+- OpenAI: Per-token pricing
+- Claude: Per-token pricing
+- Gemini: Free tier
+- Llama: Local (free)
+
+Update PRICING constants in config.py for your rates
+
+LATENCY MEASUREMENT
+====================================================================
+
+Measures end-to-end response time including:
+- API call overhead
+- Network latency
+- Model inference time
+- Post-processing
+
+ADVANCED USAGE
+====================================================================
+
+1. CUSTOM METRICS
+   - Extend MetricsEngine class
+   - Add new metric classes inheriting from base
+
+2. BATCH PROCESSING
+   - Use evaluate_batch for multiple prompts
+   - Parallel processing with num_workers config
+
+3. RESULT ANALYSIS
+   - Use ComparisonAnalyzer for statistical analysis
+   - Calculate percentiles, min/max, standard deviation
+
+4. CACHING
+   - Enable cache_responses in EvalConfig
+   - Use ResultsCache for storing results
+
+5. CUSTOM MODELS
+   - Extend BaseModel class
+   - Implement generate() and calculate_cost()
+   - Register with ModelFactory
+
+TROUBLESHOOTING
+====================================================================
+
+API Key Issues:
+- Check .env file exists and is in correct location
+- Verify API keys are valid
+- Check environment variable names
+
+Import Errors:
+- Run: pip install -r requirements.txt
+- Ensure NLTK data is downloaded
+
+Memory Issues:
+- Reduce batch_size in EvalConfig
+- Process prompts in smaller batches
+
+API Rate Limits:
+- Add delays between requests
+- Use batch processing efficiently
+- Check provider documentation
