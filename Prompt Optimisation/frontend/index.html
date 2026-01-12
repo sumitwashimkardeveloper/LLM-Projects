@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Optimization Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            color: #333;
+            font-size: 28px;
+        }
+
+        .auth-section {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+        }
+
+        button.secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        button.secondary:hover {
+            background: #d0d0d0;
+        }
+
+        button.danger {
+            background: #ef5350;
+        }
+
+        button.danger:hover {
+            background: #c62828;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 20px;
+        }
+
+        .sidebar {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+
+        .sidebar h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .sidebar nav a {
+            display: block;
+            padding: 10px;
+            margin-bottom: 5px;
+            text-decoration: none;
+            color: #667eea;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
+            background: #f0f0f0;
+            color: #764ba2;
+        }
+
+        .content-area {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .content-area h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .prompts-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .prompt-card {
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            border-radius: 8px;
+            background: #f9f9f9;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .prompt-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .prompt-card h3 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .prompt-card p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .prompt-meta {
+            display: flex;
+            gap: 10px;
+            font-size: 12px;
+            color: #999;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: #e8eaf6;
+            color: #667eea;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .prompt-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .prompt-actions button {
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #c8e6c9;
+            color: #2e7d32;
+            display: block;
+        }
+
+        .alert.error {
+            background: #ffcdd2;
+            color: #c62828;
+            display: block;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .version-item {
+            border-left: 3px solid #667eea;
+            padding-left: 15px;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .version-item.active {
+            border-left-color: #4caf50;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+        }
+
+        .tags-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .tag {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tag button {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📝 Prompt Optimization Platform</h1>
+            <div class="auth-section">
+                <span id="userEmail" style="color: #666;"></span>
+                <button onclick="logout()" id="logoutBtn" style="display: none;">Logout</button>
+                <button onclick="openAuthModal()" id="authBtn">Login / Register</button>
+            </div>
+        </header>
+
+        <div id="authContainer" class="modal">
+            <div class="modal-content">
+                <h2 id="authTitle">Login</h2>
+                <div class="alert" id="authAlert"></div>
+                <form onsubmit="handleAuth(event)">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="authEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="authPassword" required>
+                    </div>
+                    <div class="form-group" id="fullNameGroup" style="display: none;">
+                        <label>Full Name</label>
+                        <input type="text" id="authFullName">
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="button" class="secondary" onclick="closeAuthModal()">Cancel</button>
+                        <button type="button" class="secondary" onclick="toggleAuthMode()">Toggle Mode</button>
+                        <button type="submit">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="mainContent" style="display: none;">
+            <div class="main-content">
+                <div class="sidebar">
+                    <h2>Navigation</h2>
+                    <nav>
+                        <a href="#" onclick="showSection('prompts')" class="nav-link active">📋 My Prompts</a>
+                        <a href="#" onclick="showSection('create')" class="nav-link">➕ Create Prompt</a>
+                        <a href="#" onclick="showSection('versions')" class="nav-link">📚 Versions</a>
+                    </nav>
+                </div>
+
+                <div class="content-area">
+                    <div id="alert" class="alert"></div>
+
+                    <!-- Prompts Section -->
+                    <div id="prompts" class="section active">
+                        <h2>My Prompts</h2>
+                        <button onclick="openCreateModal()">➕ New Prompt</button>
+                        <div id="promptsList" class="prompts-list" style="margin-top: 20px;"></div>
+                    </div>
+
+                    <!-- Create Prompt Section -->
+                    <div id="create" class="section">
+                        <h2>Create New Prompt</h2>
+                        <div id="createForm" style="margin-top: 20px;"></div>
+                    </div>
+
+                    <!-- Versions Section -->
+                    <div id="versions" class="section">
+                        <h2>Prompt Versions</h2>
+                        <div id="versionsList" style="margin-top: 20px;"></div>
+                    </div>
+
+                    <!-- Prompt Detail -->
+                    <div id="promptDetail" class="section">
+                        <div id="promptDetailContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Prompt Modal -->
+    <div id="promptModal" class="modal">
+        <div class="modal-content">
+            <h2 id="promptModalTitle">Create Prompt</h2>
+            <div class="alert" id="promptAlert"></div>
+            <form onsubmit="handleSavePrompt(event)">
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="promptTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="promptDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Prompt Content</label>
+                    <textarea id="promptContent" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Model</label>
+                    <select id="promptModel">
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        <option value="gpt-4">GPT-4</option>
+                        <option value="claude-2">Claude 2</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tags (comma-separated)</label>
+                    <input type="text" id="promptTags" placeholder="e.g., qa, chatbot, support">
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="secondary" onclick="closePromptModal()">Cancel</button>
+                    <button type="submit">Save Prompt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Version Modal -->
+    <div id="versionModal" class="modal">
+        <div class="modal-content">
+            <h2>Create New Version</h2>
+            <div class="alert" id="versionAlert"></div>
+            <form onsubmit="handleCreateVersion(event)">
+                <div class="form-group">
+                    <label>Updated Content</label>
+                    <textarea id="versionContent" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Model</label>
+                    <select id="versionModel">
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        <option value="gpt-4">GPT-4</option>
+                        <option value="claude-2">Claude 2</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Change Description</label>
+                    <textarea id="versionDescription" placeholder="What changed?"></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="secondary" onclick="closeVersionModal()">Cancel</button>
+                    <button type="submit">Create Version</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
